@@ -56,9 +56,10 @@ def map_convert_CNF(matrix):
 
 # Example matrix
 matrix = [
-    [3, '_', 2, '_'],
     ['_', '_', 2, '_'],
-    ['_', 3, 1, '_']
+    ['_', '_', 4, 1],
+    ['_', '_', '_', 2],
+    ['_', 4, 3, '_']
 ]
 
 # Convert matrix to CNF
@@ -79,7 +80,13 @@ with Minisat22(bootstrap_with=cnf.clauses) as solver:
             for c in range(cols):
                 cell_var = (r * cols) + c + 1
                 if satisfying_assignment[cell_var - 1] > 0:
-                    print(f'Cell ({variables[r][c]}) is a trap.')
+                    print('T', end=' ')
+                else:
+                    if matrix[r][c] == '_':
+                        print('G', end=' ')
+                    else:
+                        print(matrix[r][c], end=' ')
+            print()
     else:
         print("No solution found.")
 
