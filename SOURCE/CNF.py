@@ -3,6 +3,7 @@ from pysat.solvers import Minisat22
 from itertools import combinations
 from itertools import product
 import os
+import time
 
 def read_file(filename):
     with open(filename, 'r') as f:
@@ -59,13 +60,14 @@ def map_convert_CNF(matrix):
 # Use SAT solver to find satisfying assignment
 def solveWithSAT(matrix, cnf):
     print("Solving with SAT library:")
+    RunTime = time.time()
     with Minisat22(bootstrap_with=cnf.clauses) as solver:
         rows, cols = len(matrix), len(matrix[0])
-        # Define variables for each cell
-        variables = [[(i * cols + j + 1) for j in range(cols)] for i in range(rows)]
         if solver.solve():
             # Get the satisfying assignment
             satisfying_assignment = solver.get_model()
+
+            RunTime = time.time() - RunTime
 
             # Print out the results
             rows, cols = len(matrix), len(matrix[0])
@@ -82,7 +84,9 @@ def solveWithSAT(matrix, cnf):
                 print()
             print()
         else:
+            RunTime = time.time() - RunTime
             print("No solution found.")
+    return RunTime
 
 # Optimal solution
 def remove_duplicate_lists(matrix):
@@ -166,6 +170,7 @@ def checkForTrap(val, cnfList):
     return False
 
 def solveOptimal(matrix, cnfList):
+    RunTime = time.time()
     print("Solving with Optimal solution:")
     while(applySingleResolution(cnfList)):
         pass
@@ -178,7 +183,7 @@ def solveOptimal(matrix, cnfList):
             cnfList.remove(cnfList[i])
     
     newList = all_possible_truth_values(newList)
-
+    RunTime = time.time() - RunTime
     result = []
 
     for i in newList:
@@ -202,6 +207,7 @@ def solveOptimal(matrix, cnfList):
                 print(resultMatrix[i][j], end = ' ')
             print()
         print()
+    return RunTime
 
 # Backtracking
 def is_satisfiable(cnf_formula, assignment):
@@ -239,7 +245,9 @@ def solve_with_backtracking(cnf_formula):
     return backtrack(assignment, 0)
 
 def solveBacktracking(matrix, cnf):
+    RunTime = time.time()
     solution = solve_with_backtracking(cnf)
+    RunTime = time.time() - RunTime
     if solution:
         print("Solving with BackTracking:")
         for var, value in enumerate(solution):
@@ -255,6 +263,7 @@ def solveBacktracking(matrix, cnf):
         print()
     else:
         print("No satisfying assignment exists.")
+    return RunTime
 
 def main():
     # Welcome message
@@ -293,9 +302,10 @@ def main():
         print("2. Backtracking")
         print("3. Optimal")
         print("4. Brute Force")
+        print("5. All")
 
         solving_method = int(input("Enter the number of the solving method: "))
-        while solving_method < 1 or solving_method > 4:
+        while solving_method < 1 or solving_method > 5:
             solving_method = int(input("Invalid choice. Enter the number of the solving method: "))
         print()
 
@@ -308,15 +318,30 @@ def main():
 
         # Solve the map
         if solving_method == 1:
-            solveWithSAT(matrix, cnf)
+            SATTime = solveWithSAT(matrix, cnf, SATTime)
+            print("Time taken by SAT solver: ")
         elif solving_method == 2:
-            solveBacktracking(matrix, cnf)
+            BackTrackTime = solveBacktracking(matrix, cnf)
+            print("Time taken by Backtracking: ", BackTrackTime)
         elif solving_method == 3:
-            solveOptimal(matrix, cnf.clauses)
-        else:
+            OptimalTime = solveOptimal(matrix, cnf.clauses, OptimalTime)
+            print("Time taken by Optimal solution: ", OptimalTime)
+        elif solving_method == 4:
             print("Brute Force method not implemented")
+        elif solving_method == 5:
+
+
+            SATTime = solveWithSAT(matrix, cnf)
+            BackTrackTime = solveBacktracking(matrix, cnf)
+            OptimalTime = solveOptimal(matrix, cnf.clauses)
+            print("Brute Force method not implemented")
+
+            print("Time taken by SAT solver: ", SATTime)
+            print("Time taken by Backtracking: ", BackTrackTime)
+            print("Time taken by Optimal solution: ", OptimalTime)
     
         # Ask if the user wants to solve another map
+        print()
         print("Do you want to solve another map?")
         print("1. Yes")
         print("2. No")
