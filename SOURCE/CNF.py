@@ -1,6 +1,8 @@
 from pysat.formula import CNF
 from pysat.solvers import Minisat22
 from itertools import combinations
+from itertools import product
+import os
 
 def read_file(filename):
     with open(filename, 'r') as f:
@@ -22,7 +24,7 @@ def map_convert_CNF(matrix):
             num_adjacent_traps = matrix[r][c]
 
             # If the cell is known (not '_')
-            if num_adjacent_traps != '_':
+            if num_adjacent_traps != "_":
                 cnf.append([-variables[r][c]])
                 num_adjacent_traps = int(num_adjacent_traps)
                 adjacent_vars = []
@@ -54,32 +56,9 @@ def map_convert_CNF(matrix):
                                 cnf.append(clause)  
     return cnf
 
-# # Example matrix
-# matrix = [
-#     ['_', '_',  2, '_'],
-#     ['_', '_',  4,  '_'],
-#     ['_', '_', '_', 2],
-#     ['_',  4,   3, '_']
-# ]
-
-matrix = [
-    [2, '_', '_', 1, '_'],
-    ['_', 5, 4, 2, '_'],
-    [3, '_', '_', 2, 1],
-    [3, '_', '_', '_', 1],
-    ['_', '_', '_', 2, 1],
-]
-
-# Convert matrix to CNF
-cnf = map_convert_CNF(matrix)
-
-
-
-
-
 # Use SAT solver to find satisfying assignment
-def solveWithSAT(matrix, cnd):
-    print("Solving with SAT library")
+def solveWithSAT(matrix, cnf):
+    print("Solving with SAT library:")
     with Minisat22(bootstrap_with=cnf.clauses) as solver:
         rows, cols = len(matrix), len(matrix[0])
         # Define variables for each cell
@@ -101,12 +80,11 @@ def solveWithSAT(matrix, cnd):
                         else:
                             print(matrix[r][c], end=' ')
                 print()
+            print()
         else:
             print("No solution found.")
 
-solveWithSAT(matrix, cnf)
-
-
+# Optimal solution
 def remove_duplicate_lists(matrix):
     unique_lists = set()
     result = []
@@ -119,8 +97,6 @@ def remove_duplicate_lists(matrix):
             unique_lists.add(sublist_tuple)
 
     return result
-
-
 
 def applySingleResolution(cnfList):
     i = 0
@@ -158,10 +134,6 @@ def applySingleResolution(cnfList):
         i += 1
     return flag
 
-
-
-from itertools import product
-
 def evaluate_clause(clause, truth_values):
     for literal in clause:
         if (literal > 0 and truth_values[abs(literal)] == 1) or (literal < 0 and truth_values[abs(literal)] == 0):
@@ -185,8 +157,6 @@ def all_possible_truth_values(cnf):
             satisfiable_values.append(truth_values_list)
     return satisfiable_values
 
-
-
 def checkForTrap(val, cnfList):
     for i in cnfList:
         if len(i) == 0:
@@ -195,10 +165,8 @@ def checkForTrap(val, cnfList):
             return True
     return False
 
-
-
-def solveOptimal(cnfList):
-    print("\noptinal solution")
+def solveOptimal(matrix, cnfList):
+    print("Solving with Optimal solution:")
     while(applySingleResolution(cnfList)):
         pass
 
@@ -233,13 +201,132 @@ def solveOptimal(cnfList):
             for j in range (len(resultMatrix)):
                 print(resultMatrix[i][j], end = ' ')
             print()
-        print('\n')
+        print()
+
+# Backtracking
+def is_satisfiable(cnf_formula, assignment):
+    num_vars = cnf_formula.nv
+    for clause in cnf_formula.clauses:
+        clause_satisfied = False
+        for literal in clause:
+            variable, negated = abs(literal), literal < 0
+            if variable <= num_vars:
+                if (negated and not assignment[variable-1]) or (not negated and assignment[variable-1]):
+                    clause_satisfied = True
+                    break
+        if not clause_satisfied:
+            return False
+    return True
+
+def solve_with_backtracking(cnf_formula):
+    num_vars = cnf_formula.nv
+
+    def backtrack(assignment, var_index):
+        if var_index == num_vars:
+            return assignment if is_satisfiable(cnf_formula, assignment) else None
+
+        assignment[var_index] = True
+        result = backtrack(assignment, var_index + 1)
+        if result:
+            return result
+
+        assignment[var_index] = False
+        result = backtrack(assignment, var_index + 1)
+        if result:
+            return result
+
+    assignment = [None] * num_vars
+    return backtrack(assignment, 0)
+
+def solveBacktracking(matrix, cnf):
+    solution = solve_with_backtracking(cnf)
+    if solution:
+        print("Solving with BackTracking:")
+        for var, value in enumerate(solution):
+            if value:
+                print('T', end=' ')
+            else:
+                if matrix[var // len(matrix[0])][var % len(matrix[0])] == '_':
+                    print('G', end=' ')
+                else:
+                    print(matrix[var // len(matrix[0])][var % len(matrix[0])], end=' ')
+            if (var + 1) % len(matrix[0]) == 0:
+                print()
+        print()
+    else:
+        print("No satisfying assignment exists.")
+
+def main():
+    # Welcome message
+    print()
+    print("Welcome to the Gem Hunter solver")
+    print()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    current_dir = os.path.join(current_dir, "MAP")
+
+    loop = True
+
+    while loop:
+        # Choose a map file to solve
+        opt = 0
+        print("Choose a map file to solve:")
+        for filename in os.listdir(current_dir):
+            if filename.endswith(".txt"):
+                print(f"{opt}. {filename}")
+                opt += 1
+        map_choice = int(input("Enter the number of the map file to solve: "))
+
+        while map_choice < 0 or map_choice >= opt:
+            map_choice = int(input("Invalid choice. Enter the number of the map file to solve: "))
+        print()
+        map_filename = os.path.join(current_dir, os.listdir(current_dir)[map_choice])
+
+        # Read the map file
+        matrix = read_file(map_filename)
+
+        # Convert the map to CNF
+        cnf = map_convert_CNF(matrix)
+
+        # Choose the solving method
+        print("Choose the solving method:")
+        print("1. SAT Solver")
+        print("2. Backtracking")
+        print("3. Optimal")
+        print("4. Brute Force")
+
+        solving_method = int(input("Enter the number of the solving method: "))
+        while solving_method < 1 or solving_method > 4:
+            solving_method = int(input("Invalid choice. Enter the number of the solving method: "))
+        print()
+
+        print("The map is:")
+        for i in range(len(matrix)):
+            for j in range(len(matrix[i])):
+                print(matrix[i][j], end = ' ')
+            print()
+        print()
+
+        # Solve the map
+        if solving_method == 1:
+            solveWithSAT(matrix, cnf)
+        elif solving_method == 2:
+            solveBacktracking(matrix, cnf)
+        elif solving_method == 3:
+            solveOptimal(matrix, cnf.clauses)
+        else:
+            print("Brute Force method not implemented")
     
+        # Ask if the user wants to solve another map
+        print("Do you want to solve another map?")
+        print("1. Yes")
+        print("2. No")
+        choice = int(input("Enter your choice: "))
+        while choice < 1 or choice > 2:
+            choice = int(input("Invalid choice. Enter your choice: "))
+        print()
 
+        if choice == 2:
+            loop = False
 
-
-
-cnfMatrix = [row[:] for row in cnf.clauses]
-cnfMatrix = remove_duplicate_lists(cnfMatrix)
-
-solveOptimal(cnfMatrix)
+if __name__ == "__main__":
+    main()
