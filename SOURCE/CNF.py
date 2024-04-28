@@ -183,7 +183,7 @@ def solveOptimal(matrix, cnfList):
             cnfList.remove(cnfList[i])
     
     newList = all_possible_truth_values(newList)
-    RunTime = time.time() - RunTime
+    
     result = []
 
     for i in newList:
@@ -192,6 +192,8 @@ def solveOptimal(matrix, cnfList):
             resultList.append(j)
         result.append(resultList)
     
+    RunTime = time.time() - RunTime
+
     for subList in result:
         resultMatrix = [row[:] for row in matrix]
         for i in range (len(resultMatrix)):
@@ -324,7 +326,7 @@ def main():
             BackTrackTime = solveBacktracking(matrix, cnf)
             print("Time taken by Backtracking: ", BackTrackTime)
         elif solving_method == 3:
-            OptimalTime = solveOptimal(matrix, cnf.clauses, OptimalTime)
+            OptimalTime = solveOptimal(matrix, cnf.clauses)
             print("Time taken by Optimal solution: ", OptimalTime)
         elif solving_method == 4:
             print("Brute Force method not implemented")
