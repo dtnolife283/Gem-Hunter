@@ -181,6 +181,22 @@ def checkNoSolution(cnfList):
                 return True
     return False
 
+def checkError(cnfList, matrix):
+    for i in range(len(cnfList) - 1):
+        if len(cnfList[i]) != 1:
+            continue
+        for j in range(i + 1, len(cnfList)):
+            if len(cnfList[i]) != 1:
+                continue
+            if(cnfList[i][0] + cnfList[j][0] == 0):
+                val = abs(cnfList[i][0])
+                row = i // len(matrix)
+                col = i - row * len(matrix)
+                row -= 1
+                col -= 1
+                if matrix[row][col] != '_':
+                    cnfList[i][0] = cnfList[j][0] = val
+    return cnfList
 
 
 def solveOptimal(matrix, cnfList):
@@ -190,7 +206,7 @@ def solveOptimal(matrix, cnfList):
         pass
 
     cnfList = remove_duplicate_lists(cnfList)
-
+    cnfList = checkError(cnfList, matrix)
     if checkNoSolution(cnfList):
         print ("No Solution!")
         RunTime = time.time() - RunTime
