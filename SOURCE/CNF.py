@@ -387,13 +387,13 @@ def main():
 
 
             SATTime = solveWithSAT(matrix, cnf)
-            BackTrackTime = solveBacktracking(matrix, cnf)
             OptimalTime = solveOptimal(matrix, cnf.clauses)
+            BackTrackTime = solveBacktracking(matrix, cnf)
             BruteForceTime = solveBruteForce(cnf, matrix)
 
             print("Time taken by SAT solver: ", SATTime)
-            print("Time taken by Backtracking: ", BackTrackTime)
             print("Time taken by Optimal solution: ", OptimalTime)
+            print("Time taken by Backtracking: ", BackTrackTime)
             print("Time taken by Brute Force solution: ", BruteForceTime)
     
         # Ask if the user wants to solve another map
