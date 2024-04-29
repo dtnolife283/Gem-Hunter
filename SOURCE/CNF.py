@@ -170,6 +170,19 @@ def checkForTrap(val, cnfList):
             return True
     return False
 
+def checkNoSolution(cnfList):
+    for i in cnfList:
+        if len(i) != 1:
+            continue
+        for j in cnfList:
+            if len(j) != 1:
+                continue
+            if i[0] + j[0] == 0:
+                return True
+    return False
+
+
+
 def solveOptimal(matrix, cnfList):
     RunTime = time.time()
     print("Solving with Optimal solution:")
@@ -177,6 +190,12 @@ def solveOptimal(matrix, cnfList):
         pass
 
     cnfList = remove_duplicate_lists(cnfList)
+
+    if checkNoSolution(cnfList):
+        print ("No Solution!")
+        RunTime = time.time() - RunTime
+        return RunTime
+
     newList = []
     for i in range (len(cnfList) - 1, -1, -1):
         if len(cnfList[i]) > 1:
