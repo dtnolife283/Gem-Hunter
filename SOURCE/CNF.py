@@ -320,8 +320,8 @@ def main():
 
         # Solve the map
         if solving_method == 1:
-            SATTime = solveWithSAT(matrix, cnf, SATTime)
-            print("Time taken by SAT solver: ")
+            SATTime = solveWithSAT(matrix, cnf)
+            print("Time taken by SAT solver: ", SATTime)
         elif solving_method == 2:
             BackTrackTime = solveBacktracking(matrix, cnf)
             print("Time taken by Backtracking: ", BackTrackTime)
