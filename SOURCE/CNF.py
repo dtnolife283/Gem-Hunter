@@ -111,7 +111,6 @@ def applySingleResolution(cnfList):
             i += 1
             continue
         val = cnfList[i][0]
-
         j = 0
         while (j < length):
             if len(cnfList[j]) == 1:
@@ -137,6 +136,8 @@ def applySingleResolution(cnfList):
             j += 1
         i += 1
     return flag
+
+
 
 def evaluate_clause(clause, truth_values):
     for literal in clause:
@@ -193,6 +194,10 @@ def solveOptimal(matrix, cnfList):
         result.append(resultList)
     
     RunTime = time.time() - RunTime
+
+    if len(result) == 0:
+        print("No solution found!")
+        return RunTime
 
     for subList in result:
         resultMatrix = [row[:] for row in matrix]
@@ -267,6 +272,34 @@ def solveBacktracking(matrix, cnf):
         print("No satisfying assignment exists.")
     return RunTime
 
+#Brute Force
+def solveBruteForce(cnf, initialMatrix: list[list]):
+    start_time = time.time()
+    num_vars = max([abs(lit) for clause in cnf for lit in clause])
+    result = []
+    for assignment in product([False, True], repeat=num_vars):
+        if all(any(lit > 0 and assignment[abs(lit) - 1] or lit < 0 and not assignment[abs(lit) - 1] for lit in clause) for clause in cnf):
+            end_time = time.time()
+            countTime = end_time - start_time
+            result = assignment
+            break
+    print("Brute Force: ")
+    length = len(initialMatrix)
+    for i in range (length):
+        for j in range (length):
+            if initialMatrix[i][j] != '_':
+                print(initialMatrix[i][j], end = ' ')
+            else:
+                if result[(i * length) + j] == True:
+                    print("T ", end = "")
+                else:
+                    print("G ", end = "")
+        print()
+    return countTime
+
+
+
+
 def main():
     # Welcome message
     print()
@@ -329,18 +362,20 @@ def main():
             OptimalTime = solveOptimal(matrix, cnf.clauses)
             print("Time taken by Optimal solution: ", OptimalTime)
         elif solving_method == 4:
-            print("Brute Force method not implemented")
+            BruteForceTime = solveBruteForce(cnf, matrix)
+            print("Time taken by Brute Force solution: ", BruteForceTime)
         elif solving_method == 5:
 
 
             SATTime = solveWithSAT(matrix, cnf)
             BackTrackTime = solveBacktracking(matrix, cnf)
             OptimalTime = solveOptimal(matrix, cnf.clauses)
-            print("Brute Force method not implemented")
+            BruteForceTime = solveBruteForce(cnf, matrix)
 
             print("Time taken by SAT solver: ", SATTime)
             print("Time taken by Backtracking: ", BackTrackTime)
             print("Time taken by Optimal solution: ", OptimalTime)
+            print("Time taken by Brute Force solution: ", BruteForceTime)
     
         # Ask if the user wants to solve another map
         print()
