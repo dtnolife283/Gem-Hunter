@@ -9,7 +9,7 @@ def read_file(filename):
     with open(filename, 'r') as f:
         matrix = []
         for line in f:
-            matrix.append(line.strip().split(','))
+            matrix.append(line.strip().split(', '))
     return matrix
 
 def map_convert_CNF(matrix):
