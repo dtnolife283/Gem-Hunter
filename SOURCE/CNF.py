@@ -5,6 +5,11 @@ from itertools import product
 import os
 import time
 
+def write_file(filename, matrix):
+    with open(filename, 'w') as f:
+        for row in matrix:
+            f.write(', '.join(row) + '\n')
+
 def read_file(filename):
     with open(filename, 'r') as f:
         matrix = []
@@ -67,6 +72,7 @@ def map_convert_CNF(matrix):
 def solveWithSAT(matrix, cnf):
     print("Solving with SAT library:")
     RunTime = time.time_ns()
+    res = matrix.copy()
     with Minisat22(bootstrap_with=cnf.clauses) as solver:
         rows, cols = len(matrix), len(matrix[0])
         if solver.solve():
@@ -82,15 +88,21 @@ def solveWithSAT(matrix, cnf):
                     cell_var = (r * cols) + c + 1
                     if satisfying_assignment[cell_var - 1] > 0:
                         print('T', end=' ')
+                        res[r][c] = 'T'
                     else:
                         if matrix[r][c] == '_':
                             print('G', end=' ')
+                            res[r][c] = 'G'
                         else:
                             print(matrix[r][c], end=' ')
+                            res[r][c] = matrix[r][c]
                 print()
             print()
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            current_dir = os.path.join(current_dir, "testcases")
+            filename = "output_" + str(len(matrix)) + "x" + str(len(matrix[0])) + ".txt"
+            write_file(os.path.join(current_dir, filename), res)
         else:
-            RunTime = time.time_ns() - RunTime
             print("No solution found.")
     return RunTime
 
@@ -332,7 +344,7 @@ def main():
     print("Welcome to the Gem Hunter solver")
     print()
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    current_dir = os.path.join(current_dir, "MAP")
+    current_dir = os.path.join(current_dir, "testcases")
 
     loop = True
 
@@ -342,6 +354,8 @@ def main():
         print("Choose a map file to solve:")
         for filename in os.listdir(current_dir):
             if filename.endswith(".txt"):
+                if filename.startswith("output_"):
+                    continue
                 print(f"{opt}. {filename}")
                 opt += 1
         map_choice = int(input("Enter the number of the map file to solve: "))
