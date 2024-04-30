@@ -5,11 +5,6 @@ from itertools import product
 import os
 import time
 
-def write_file(filename, matrix):
-    with open(filename, 'w') as f:
-        for row in matrix:
-            f.write(', '.join(row) + '\n')
-    
 def read_file(filename):
     with open(filename, 'r') as f:
         matrix = []
@@ -71,15 +66,14 @@ def map_convert_CNF(matrix):
 # Use SAT solver to find satisfying assignment
 def solveWithSAT(matrix, cnf):
     print("Solving with SAT library:")
-    RunTime = time.time()
-    res = matrix.copy()
+    RunTime = time.time_ns()
     with Minisat22(bootstrap_with=cnf.clauses) as solver:
         rows, cols = len(matrix), len(matrix[0])
         if solver.solve():
             # Get the satisfying assignment
             satisfying_assignment = solver.get_model()
 
-            RunTime = time.time() - RunTime
+            RunTime = time.time_ns() - RunTime
 
             # Print out the results
             rows, cols = len(matrix), len(matrix[0])
@@ -88,23 +82,15 @@ def solveWithSAT(matrix, cnf):
                     cell_var = (r * cols) + c + 1
                     if satisfying_assignment[cell_var - 1] > 0:
                         print('T', end=' ')
-                        res[r][c] = 'T'
                     else:
                         if matrix[r][c] == '_':
                             print('G', end=' ')
-                            res[r][c] = 'G'
                         else:
                             print(matrix[r][c], end=' ')
-                            res[r][c] = matrix[r][c]
-                            
                 print()
             print()
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            current_dir = os.path.join(current_dir, "testcases")
-            filename = "output_" + str(len(matrix)) + "x" + str(len(matrix[0])) + ".txt"
-            write_file(os.path.join(current_dir, filename), res)
         else:
-            RunTime = time.time() - RunTime
+            RunTime = time.time_ns() - RunTime
             print("No solution found.")
     return RunTime
 
@@ -122,6 +108,8 @@ def remove_duplicate_lists(matrix):
 
     return result
 
+visitedValue = set()
+
 def applySingleResolution(cnfList):
     i = 0
     length = len(cnfList)
@@ -131,6 +119,13 @@ def applySingleResolution(cnfList):
             i += 1
             continue
         val = cnfList[i][0]
+
+        if val in visitedValue:
+            i += 1
+            continue
+        else:
+            visitedValue.add(val)
+
         j = 0
         while (j < length):
             if len(cnfList[j]) == 1:
@@ -171,16 +166,15 @@ def evaluate_cnf(cnf, truth_values):
             return False
     return True
 
-def all_possible_truth_values(cnf):
+def first_truth_values(cnf):
     literals = set(abs(literal) for clause in cnf for literal in clause)
     possible_truth_values = list(product([0, 1], repeat=len(literals)))
-    satisfiable_values = []
     for values in possible_truth_values:
         truth_values_dict = {literal: value for literal, value in zip(literals, values)}
         truth_values_list = [[lit] if truth_values_dict[lit] == 1 else [-lit] for lit in literals]
         if evaluate_cnf(cnf, truth_values_dict):
-            satisfiable_values.append(truth_values_list)
-    return satisfiable_values
+            return truth_values_list
+    return []
 
 def checkForTrap(val, cnfList):
     for i in cnfList:
@@ -201,35 +195,18 @@ def checkNoSolution(cnfList):
                 return True
     return False
 
-def checkError(cnfList, matrix):
-    for i in range(len(cnfList) - 1):
-        if len(cnfList[i]) != 1:
-            continue
-        for j in range(i + 1, len(cnfList)):
-            if len(cnfList[i]) != 1:
-                continue
-            if(cnfList[i][0] + cnfList[j][0] == 0):
-                val = abs(cnfList[i][0])
-                row = i // len(matrix)
-                col = i - row * len(matrix)
-                row -= 1
-                col -= 1
-                if matrix[row][col] != '_':
-                    cnfList[i][0] = cnfList[j][0] = val
-    return cnfList
 
 
 def solveOptimal(matrix, cnfList):
-    RunTime = time.time()
+    RunTime = time.time_ns()
     print("Solving with Optimal solution:")
     while(applySingleResolution(cnfList)):
         pass
 
     cnfList = remove_duplicate_lists(cnfList)
-    cnfList = checkError(cnfList, matrix)
     if checkNoSolution(cnfList):
         print ("No Solution!")
-        RunTime = time.time() - RunTime
+        RunTime = time.time_ns() - RunTime
         return RunTime
 
     newList = []
@@ -238,37 +215,31 @@ def solveOptimal(matrix, cnfList):
             newList.append(cnfList[i])
             cnfList.remove(cnfList[i])
     
-    newList = all_possible_truth_values(newList)
+
+    newList = first_truth_values(newList)
     
-    result = []
-
-    for i in newList:
-        resultList = cnfList[:]
-        for j in i:
-            resultList.append(j)
-        result.append(resultList)
     
-    RunTime = time.time() - RunTime
+    
+    resultList = cnfList[:]
+    for j in newList:
+        resultList.append(j)
+    
+    RunTime = time.time_ns() - RunTime
 
-    if len(result) == 0:
-        print("No solution found!")
-        return RunTime
-
-    for subList in result:
-        resultMatrix = [row[:] for row in matrix]
-        for i in range (len(resultMatrix)):
-            for j in range (len(resultMatrix)):
-                if resultMatrix[i][j] == '_':
-                    val = i * len(resultMatrix) + j + 1
-                    if checkForTrap(val, subList):
-                        resultMatrix[i][j] = "T"
-                    else:
-                        resultMatrix[i][j] = "G"
-        for i in range (len(resultMatrix)):
-            for j in range (len(resultMatrix)):
-                print(resultMatrix[i][j], end = ' ')
-            print()
+    resultMatrix = [row[:] for row in matrix]
+    for i in range (len(resultMatrix)):
+        for j in range (len(resultMatrix)):
+            if resultMatrix[i][j] == '_':
+                val = i * len(resultMatrix) + j + 1
+                if checkForTrap(val, resultList):
+                    resultMatrix[i][j] = "T"
+                else:
+                    resultMatrix[i][j] = "G"
+    for i in range (len(resultMatrix)):
+        for j in range (len(resultMatrix)):
+            print(resultMatrix[i][j], end = ' ')
         print()
+    print()
     return RunTime
 
 # Backtracking
@@ -307,9 +278,9 @@ def solve_with_backtracking(cnf_formula):
     return backtrack(assignment, 0)
 
 def solveBacktracking(matrix, cnf):
-    RunTime = time.time()
+    RunTime = time.time_ns()
     solution = solve_with_backtracking(cnf)
-    RunTime = time.time() - RunTime
+    RunTime = time.time_ns() - RunTime
     if solution:
         print("Solving with BackTracking:")
         for var, value in enumerate(solution):
@@ -327,14 +298,14 @@ def solveBacktracking(matrix, cnf):
         print("No satisfying assignment exists.")
     return RunTime
 
-# Brute Force
+#Brute Force
 def solveBruteForce(cnf, initialMatrix: list[list]):
-    start_time = time.time()
+    start_time = time.time_ns()
     num_vars = max([abs(lit) for clause in cnf for lit in clause])
     result = []
     for assignment in product([False, True], repeat=num_vars):
         if all(any(lit > 0 and assignment[abs(lit) - 1] or lit < 0 and not assignment[abs(lit) - 1] for lit in clause) for clause in cnf):
-            end_time = time.time()
+            end_time = time.time_ns()
             countTime = end_time - start_time
             result = assignment
             break
@@ -361,7 +332,7 @@ def main():
     print("Welcome to the Gem Hunter solver")
     print()
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    current_dir = os.path.join(current_dir, "testcases")
+    current_dir = os.path.join(current_dir, "MAP")
 
     loop = True
 
@@ -371,8 +342,6 @@ def main():
         print("Choose a map file to solve:")
         for filename in os.listdir(current_dir):
             if filename.endswith(".txt"):
-                if filename.startswith("output_"):
-                    continue
                 print(f"{opt}. {filename}")
                 opt += 1
         map_choice = int(input("Enter the number of the map file to solve: "))
@@ -416,6 +385,7 @@ def main():
             BackTrackTime = solveBacktracking(matrix, cnf)
             print("Time taken by Backtracking: ", BackTrackTime)
         elif solving_method == 3:
+            visitedValue.clear()
             OptimalTime = solveOptimal(matrix, cnf.clauses)
             print("Time taken by Optimal solution: ", OptimalTime)
         elif solving_method == 4:
@@ -425,6 +395,7 @@ def main():
 
 
             SATTime = solveWithSAT(matrix, cnf)
+            visitedValue.clear()
             OptimalTime = solveOptimal(matrix, cnf.clauses)
             BackTrackTime = solveBacktracking(matrix, cnf)
             BruteForceTime = solveBruteForce(cnf, matrix)
