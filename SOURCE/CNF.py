@@ -196,6 +196,8 @@ def checkForTrap(val, cnfList):
             return True
     return False
 
+
+
 def checkNoSolution(cnfList):
     for i in cnfList:
         if len(i) != 1:
@@ -214,7 +216,7 @@ def solveOptimal(matrix, cnfList):
     print("Solving with Optimal solution:")
     while(applySingleResolution(cnfList)):
         pass
-
+    
     cnfList = remove_duplicate_lists(cnfList)
     if checkNoSolution(cnfList):
         print ("No Solution!")
@@ -225,24 +227,33 @@ def solveOptimal(matrix, cnfList):
     for i in range (len(cnfList) - 1, -1, -1):
         if len(cnfList[i]) > 1:
             newList.append(cnfList[i])
-            cnfList.remove(cnfList[i])
+            
     
 
     newList = first_truth_values(newList)
     
     
-    
-    resultList = cnfList[:]
+    resultList = []
+    for i in cnfList:
+        if len(i) == 1:
+            resultList.append(i)
     for j in newList:
         resultList.append(j)
     
     RunTime = time.time_ns() - RunTime
 
-    resultMatrix = [row[:] for row in matrix]
+    resultMatrix = []
+    for i in range (len(matrix)):
+        row = []
+        for j in range (len(matrix[i])):
+            row.append(matrix[i][j])
+        resultMatrix.append(row)
+            
+
     for i in range (len(resultMatrix)):
-        for j in range (len(resultMatrix)):
+        for j in range (len(resultMatrix[i])):
             if resultMatrix[i][j] == '_':
-                val = i * len(resultMatrix) + j + 1
+                val = i * len(resultMatrix[i]) + j + 1
                 if checkForTrap(val, resultList):
                     resultMatrix[i][j] = "T"
                 else:
@@ -323,12 +334,12 @@ def solveBruteForce(cnf, initialMatrix: list[list]):
             break
     print("Brute Force: ")
     length = len(initialMatrix)
-    for i in range (length):
+    for i in range (len(initialMatrix)):
         for j in range (len(initialMatrix[i])):
             if initialMatrix[i][j] != '_':
                 print(initialMatrix[i][j], end = ' ')
             else:
-                if result[(i * length) + j] == True:
+                if result[(i * len(initialMatrix)) + j] == True:
                     print("T ", end = "")
                 else:
                     print("G ", end = "")
