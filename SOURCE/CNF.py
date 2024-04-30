@@ -45,6 +45,12 @@ def map_convert_CNF(matrix):
                         tmp.append([var])
                     cnf.extend(tmp.clauses)
                     continue
+                elif num_adjacent_traps == 0:
+                    tmp = CNF()
+                    for var in adjacent_vars:
+                        tmp.append([-var])
+                    cnf.extend(tmp.clauses)
+                    continue
                 else:
                     cnf.append(adjacent_vars)
                     cnf.append([-x for x in adjacent_vars])
