@@ -166,16 +166,15 @@ def evaluate_cnf(cnf, truth_values):
             return False
     return True
 
-def all_possible_truth_values(cnf):
+def first_truth_values(cnf):
     literals = set(abs(literal) for clause in cnf for literal in clause)
     possible_truth_values = list(product([0, 1], repeat=len(literals)))
-    satisfiable_values = []
     for values in possible_truth_values:
         truth_values_dict = {literal: value for literal, value in zip(literals, values)}
         truth_values_list = [[lit] if truth_values_dict[lit] == 1 else [-lit] for lit in literals]
         if evaluate_cnf(cnf, truth_values_dict):
-            satisfiable_values.append(truth_values_list)
-    return satisfiable_values
+            return truth_values_list
+    return []
 
 def checkForTrap(val, cnfList):
     for i in cnfList:
@@ -216,37 +215,31 @@ def solveOptimal(matrix, cnfList):
             newList.append(cnfList[i])
             cnfList.remove(cnfList[i])
     
-    newList = all_possible_truth_values(newList)
-    
-    result = []
 
-    for i in newList:
-        resultList = cnfList[:]
-        for j in i:
-            resultList.append(j)
-        result.append(resultList)
+    newList = first_truth_values(newList)
+    
+    
+    
+    resultList = cnfList[:]
+    for j in newList:
+        resultList.append(j)
     
     RunTime = time.time_ns() - RunTime
 
-    if len(result) == 0:
-        print("No solution found!")
-        return RunTime
-
-    for subList in result:
-        resultMatrix = [row[:] for row in matrix]
-        for i in range (len(resultMatrix)):
-            for j in range (len(resultMatrix)):
-                if resultMatrix[i][j] == '_':
-                    val = i * len(resultMatrix) + j + 1
-                    if checkForTrap(val, subList):
-                        resultMatrix[i][j] = "T"
-                    else:
-                        resultMatrix[i][j] = "G"
-        for i in range (len(resultMatrix)):
-            for j in range (len(resultMatrix)):
-                print(resultMatrix[i][j], end = ' ')
-            print()
+    resultMatrix = [row[:] for row in matrix]
+    for i in range (len(resultMatrix)):
+        for j in range (len(resultMatrix)):
+            if resultMatrix[i][j] == '_':
+                val = i * len(resultMatrix) + j + 1
+                if checkForTrap(val, resultList):
+                    resultMatrix[i][j] = "T"
+                else:
+                    resultMatrix[i][j] = "G"
+    for i in range (len(resultMatrix)):
+        for j in range (len(resultMatrix)):
+            print(resultMatrix[i][j], end = ' ')
         print()
+    print()
     return RunTime
 
 # Backtracking
