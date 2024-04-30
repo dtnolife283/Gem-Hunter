@@ -66,14 +66,14 @@ def map_convert_CNF(matrix):
 # Use SAT solver to find satisfying assignment
 def solveWithSAT(matrix, cnf):
     print("Solving with SAT library:")
-    RunTime = time.time()
+    RunTime = time.time_ns()
     with Minisat22(bootstrap_with=cnf.clauses) as solver:
         rows, cols = len(matrix), len(matrix[0])
         if solver.solve():
             # Get the satisfying assignment
             satisfying_assignment = solver.get_model()
 
-            RunTime = time.time() - RunTime
+            RunTime = time.time_ns() - RunTime
 
             # Print out the results
             rows, cols = len(matrix), len(matrix[0])
@@ -90,7 +90,7 @@ def solveWithSAT(matrix, cnf):
                 print()
             print()
         else:
-            RunTime = time.time() - RunTime
+            RunTime = time.time_ns() - RunTime
             print("No solution found.")
     return RunTime
 
@@ -108,6 +108,8 @@ def remove_duplicate_lists(matrix):
 
     return result
 
+visitedValue = set()
+
 def applySingleResolution(cnfList):
     i = 0
     length = len(cnfList)
@@ -117,6 +119,13 @@ def applySingleResolution(cnfList):
             i += 1
             continue
         val = cnfList[i][0]
+
+        if val in visitedValue:
+            i += 1
+            continue
+        else:
+            visitedValue.add(val)
+
         j = 0
         while (j < length):
             if len(cnfList[j]) == 1:
@@ -187,35 +196,18 @@ def checkNoSolution(cnfList):
                 return True
     return False
 
-def checkError(cnfList, matrix):
-    for i in range(len(cnfList) - 1):
-        if len(cnfList[i]) != 1:
-            continue
-        for j in range(i + 1, len(cnfList)):
-            if len(cnfList[i]) != 1:
-                continue
-            if(cnfList[i][0] + cnfList[j][0] == 0):
-                val = abs(cnfList[i][0])
-                row = i // len(matrix)
-                col = i - row * len(matrix)
-                row -= 1
-                col -= 1
-                if matrix[row][col] != '_':
-                    cnfList[i][0] = cnfList[j][0] = val
-    return cnfList
 
 
 def solveOptimal(matrix, cnfList):
-    RunTime = time.time()
+    RunTime = time.time_ns()
     print("Solving with Optimal solution:")
     while(applySingleResolution(cnfList)):
         pass
 
     cnfList = remove_duplicate_lists(cnfList)
-    cnfList = checkError(cnfList, matrix)
     if checkNoSolution(cnfList):
         print ("No Solution!")
-        RunTime = time.time() - RunTime
+        RunTime = time.time_ns() - RunTime
         return RunTime
 
     newList = []
@@ -234,7 +226,7 @@ def solveOptimal(matrix, cnfList):
             resultList.append(j)
         result.append(resultList)
     
-    RunTime = time.time() - RunTime
+    RunTime = time.time_ns() - RunTime
 
     if len(result) == 0:
         print("No solution found!")
@@ -293,9 +285,9 @@ def solve_with_backtracking(cnf_formula):
     return backtrack(assignment, 0)
 
 def solveBacktracking(matrix, cnf):
-    RunTime = time.time()
+    RunTime = time.time_ns()
     solution = solve_with_backtracking(cnf)
-    RunTime = time.time() - RunTime
+    RunTime = time.time_ns() - RunTime
     if solution:
         print("Solving with BackTracking:")
         for var, value in enumerate(solution):
@@ -315,12 +307,12 @@ def solveBacktracking(matrix, cnf):
 
 #Brute Force
 def solveBruteForce(cnf, initialMatrix: list[list]):
-    start_time = time.time()
+    start_time = time.time_ns()
     num_vars = max([abs(lit) for clause in cnf for lit in clause])
     result = []
     for assignment in product([False, True], repeat=num_vars):
         if all(any(lit > 0 and assignment[abs(lit) - 1] or lit < 0 and not assignment[abs(lit) - 1] for lit in clause) for clause in cnf):
-            end_time = time.time()
+            end_time = time.time_ns()
             countTime = end_time - start_time
             result = assignment
             break
@@ -400,6 +392,7 @@ def main():
             BackTrackTime = solveBacktracking(matrix, cnf)
             print("Time taken by Backtracking: ", BackTrackTime)
         elif solving_method == 3:
+            visitedValue.clear()
             OptimalTime = solveOptimal(matrix, cnf.clauses)
             print("Time taken by Optimal solution: ", OptimalTime)
         elif solving_method == 4:
@@ -409,6 +402,7 @@ def main():
 
 
             SATTime = solveWithSAT(matrix, cnf)
+            visitedValue.clear()
             OptimalTime = solveOptimal(matrix, cnf.clauses)
             BackTrackTime = solveBacktracking(matrix, cnf)
             BruteForceTime = solveBruteForce(cnf, matrix)
