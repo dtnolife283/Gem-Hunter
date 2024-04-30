@@ -248,7 +248,7 @@ def solveOptimal(matrix, cnfList):
                 else:
                     resultMatrix[i][j] = "G"
     for i in range (len(resultMatrix)):
-        for j in range (len(resultMatrix)):
+        for j in range (len(resultMatrix[i])):
             print(resultMatrix[i][j], end = ' ')
         print()
     print()
@@ -324,7 +324,7 @@ def solveBruteForce(cnf, initialMatrix: list[list]):
     print("Brute Force: ")
     length = len(initialMatrix)
     for i in range (length):
-        for j in range (length):
+        for j in range (len(initialMatrix[i])):
             if initialMatrix[i][j] != '_':
                 print(initialMatrix[i][j], end = ' ')
             else:
@@ -333,6 +333,7 @@ def solveBruteForce(cnf, initialMatrix: list[list]):
                 else:
                     print("G ", end = "")
         print()
+    print()
     return countTime
 
 
